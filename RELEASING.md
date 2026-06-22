@@ -21,6 +21,25 @@ build and publish each package with your standard PyPI tooling.
 
 ## Changelog
 
+### 0.3.0
+
+Additive — two opt-in behaviors for a long-running daemon consumer that
+dispatches command delivery. No breaking changes; existing defaults unchanged.
+
+- `RealtimeSubscriber(..., max_reconnect_attempts=10)` — configurable reconnect.
+  `None` reconnects indefinitely (a daemon never goes permanently offline);
+  default 10 preserves prior behavior. Backoff and resubscribe-on-reconnect are
+  unchanged.
+- `RealtimePublisher.publish_now(channel, data, *, scope=None)` — strict,
+  raising publish for delivery that must not be silently dropped. It ensures the
+  connection (lazy connect / reconnect with a freshly minted token), sends the
+  frame, and propagates any failure to the caller (no queue, no drop). Works
+  without `start()`. Use a given instance for EITHER the best-effort queue
+  (`start()` + `publish`/`publish_event`) OR `publish_now`, not both — they
+  share the socket.
+- `brutalsystems-realtime-core` bumped to 0.3.0 in lockstep (the pin stays
+  matched); the changes are client-side.
+
 ### 0.2.0
 
 Additive — surfaces the realtime service's full inbound protocol. No breaking

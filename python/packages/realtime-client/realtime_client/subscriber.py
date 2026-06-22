@@ -34,10 +34,16 @@ async def _default_connect(url: str, subprotocols: list[str]) -> Any:
 class RealtimeSubscriber:
     def __init__(
         self, *, url: str, token_provider: Callable[[], str],
+        max_reconnect_attempts: int | None = 10,
         _connect: Callable[[str, list[str]], Awaitable[Any]] = _default_connect,
     ) -> None:
         self._url = url
         self._token_provider = token_provider
+        self._max_reconnect_attempts = max_reconnect_attempts
+        """Number of reconnect attempts before the reader gives up; ``None``
+        reconnects indefinitely (right for a long-running daemon consumer that
+        must never go permanently offline). Default 10 preserves prior
+        behavior."""
         self._connect = _connect
         self._ws: Any | None = None
         self._queues: dict[str, asyncio.Queue[InboundEvent]] = {}
@@ -102,7 +108,10 @@ class RealtimeSubscriber:
             # reconnect path (ported verbatim)
             delay = _BACKOFF_SECONDS[min(backoff_idx, len(_BACKOFF_SECONDS) - 1)]
             backoff_idx += 1
-            if backoff_idx > 10:
+            if (
+                self._max_reconnect_attempts is not None
+                and backoff_idx > self._max_reconnect_attempts
+            ):
                 return
             await asyncio.sleep(delay)
             new_ws = None

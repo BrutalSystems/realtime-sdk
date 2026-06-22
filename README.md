@@ -55,6 +55,29 @@ async with RealtimeSubscriber(url="wss://realtime/ws", token_provider=minter) as
         print(evt.kind, evt.channel, evt.sender_id, evt.data)
 ```
 
+### Long-running consumers (0.3.0)
+
+A daemon consumer that must stay connected and that dispatches command delivery
+has two opt-in behaviors:
+
+```python
+from realtime_client import RealtimePublisher, RealtimeSubscriber
+
+# Reconnect forever instead of giving up after the default 10 attempts.
+sub = RealtimeSubscriber(
+    url="wss://realtime/ws", token_provider=minter, max_reconnect_attempts=None,
+)
+
+# Strict publish: raises if delivery can't be attempted/sent, so the caller can
+# react (e.g. fail the job) instead of having the message silently dropped.
+pub = RealtimePublisher(url="wss://realtime/ws", token_provider=minter)
+await pub.publish_now("channel.123", {"event": "do-work", "payload": {"id": 7}})
+```
+
+`publish_now` needs no `start()` — it self-manages the connection. Use a given
+publisher for EITHER the best-effort queue (`start()` + `publish`) OR
+`publish_now`, not both: they share the socket.
+
 ### Develop
 
 [uv](https://docs.astral.sh/uv/) workspace, Python 3.13+.

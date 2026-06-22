@@ -106,6 +106,69 @@ async def test_reconnects_and_remints_after_send_failure():
 
 
 @pytest.mark.asyncio
+async def test_publish_now_sends_frame_without_worker():
+    # No start() — publish_now self-manages the connection.
+    fake = FakeWS()
+
+    async def fake_connect(url, subprotocols):
+        return fake
+
+    pub = RealtimePublisher(url="ws://x", token_provider=lambda: "tok", _connect=fake_connect)
+    await pub.publish_now("room1", {"event": "msg", "payload": {"text": "hi"}})
+    assert json.loads(fake.sent[0]) == {
+        "type": "publish", "channel": "room1",
+        "data": {"event": "msg", "payload": {"text": "hi"}},
+    }
+
+
+@pytest.mark.asyncio
+async def test_publish_now_raises_when_connect_fails():
+    async def fake_connect(url, subprotocols):
+        raise ConnectionError("cannot connect")
+
+    pub = RealtimePublisher(url="ws://x", token_provider=lambda: "tok", _connect=fake_connect)
+    # Strict delivery: the failure MUST propagate, not be swallowed.
+    with pytest.raises(ConnectionError):
+        await pub.publish_now("room1", {"n": 1})
+
+
+@pytest.mark.asyncio
+async def test_publish_now_raises_when_send_fails():
+    class FailingWS(FakeWS):
+        async def send(self, data: str) -> None:
+            raise RuntimeError("socket dead")
+
+    fake = FailingWS()
+
+    async def fake_connect(url, subprotocols):
+        return fake
+
+    pub = RealtimePublisher(url="ws://x", token_provider=lambda: "tok", _connect=fake_connect)
+    with pytest.raises(RuntimeError):
+        await pub.publish_now("room1", {"n": 1})
+
+
+@pytest.mark.asyncio
+async def test_publish_now_mints_token_on_fresh_connect():
+    mints: list[str] = []
+
+    def minter() -> str:
+        mints.append("x")
+        return f"tok{len(mints)}"
+
+    captured: list[list[str]] = []
+
+    async def fake_connect(url, subprotocols):
+        captured.append(subprotocols)
+        return FakeWS()
+
+    pub = RealtimePublisher(url="ws://x", token_provider=minter, _connect=fake_connect)
+    await pub.publish_now("room1", {"n": 1})
+    assert mints == ["x"]                      # minted once for the fresh connect
+    assert captured[0] == ["Bearer.tok1"]      # the freshly minted token was used
+
+
+@pytest.mark.asyncio
 async def test_rest_publish_posts_typed_body_with_bearer():
     captured: dict = {}
 

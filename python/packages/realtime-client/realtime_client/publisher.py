@@ -90,6 +90,38 @@ class RealtimePublisher:
         """Convenience matching the prior internal publisher signature."""
         await self.publish(channel, {"event": event, "payload": payload}, scope=scope)
 
+    async def publish_now(
+        self, channel: str, data: dict[str, Any], *, scope: str | None = None,
+    ) -> None:
+        """Strict publish for delivery that must NOT be silently dropped.
+
+        Ensures the connection (lazy connect / reconnect with a freshly minted
+        token, via the same _ensure_connected path as the worker), sends the
+        publish frame, and PROPAGATES any exception — no queue, no drop, no
+        swallow. The caller learns immediately if delivery could not be
+        attempted or sent (so it can, e.g., fail the job). Use this for command
+        delivery; use publish()/publish_event() for best-effort event broadcast.
+
+        Works WITHOUT start() — no background worker is needed; publish_now
+        self-manages the connection. A given RealtimePublisher instance should
+        use EITHER the best-effort queue (start() + publish/publish_event) OR
+        publish_now — not both concurrently, since they share the same socket.
+        """
+        frame = publish_frame(channel, data, scope=scope)
+        try:
+            await self._send_one(frame)
+        except Exception:
+            # Drop the socket so the NEXT publish_now reconnects + re-mints
+            # (same recovery as the worker), then re-raise — strict delivery
+            # means the caller MUST learn that this send failed.
+            if self._ws is not None:
+                try:
+                    await self._ws.close()
+                except Exception:
+                    pass
+                self._ws = None
+            raise
+
     async def _worker(self) -> None:
         while not self._stop.is_set():
             try:

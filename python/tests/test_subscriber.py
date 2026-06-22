@@ -154,6 +154,100 @@ async def test_reconnect_resubscribes_after_clean_close():
         assert json.loads(conns[1].sent[0]) == {"type": "subscribe", "channel": "room1"}
 
 
+class ClosableWS(FakeWS):
+    """FakeWS whose stream, once closed, stays closed.
+
+    The base FakeWS blocks on re-iteration after the stream is drained; a real
+    websockets connection raises immediately once closed. This models that so
+    the reconnect loop keeps cycling (and the reader can reach its give-up
+    branch) instead of hanging on a dead socket."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._stream_closed = False
+
+    def close_stream(self) -> None:
+        self._stream_closed = True
+        super().close_stream()
+
+    async def __anext__(self) -> str:
+        if self._stream_closed and self._inbox.empty():
+            raise StopAsyncIteration
+        return await super().__anext__()
+
+
+@pytest.mark.asyncio
+async def test_gives_up_after_max_reconnect_attempts(monkeypatch):
+    # Neutralize the real backoff sleeps so the test runs fast.
+    real_sleep = asyncio.sleep
+
+    async def fast_sleep(_):
+        await real_sleep(0)
+
+    monkeypatch.setattr("realtime_client.subscriber.asyncio.sleep", fast_sleep)
+
+    attempts = {"n": 0}
+    first = ClosableWS()
+
+    async def fake_connect(url, subprotocols):
+        attempts["n"] += 1
+        if attempts["n"] == 1:
+            return first  # initial connection succeeds
+        raise ConnectionError("down")  # every reconnect fails
+
+    sub = RealtimeSubscriber(
+        url="ws://x", token_provider=lambda: "tok",
+        _connect=fake_connect, max_reconnect_attempts=1,
+    )
+    async with sub:
+        await sub.subscribe(["room1"])
+        first.close_stream()  # trigger the reconnect path
+        # The reader must give up (task completes) rather than retry forever.
+        await asyncio.wait_for(sub._reader_task, timeout=2.0)
+    # 1 initial connect + exactly 1 reconnect attempt, then give up.
+    assert attempts["n"] == 2
+
+
+@pytest.mark.asyncio
+async def test_reconnects_indefinitely_when_max_is_none(monkeypatch):
+    real_sleep = asyncio.sleep
+
+    async def fast_sleep(_):
+        await real_sleep(0)
+
+    monkeypatch.setattr("realtime_client.subscriber.asyncio.sleep", fast_sleep)
+
+    first = ClosableWS()
+    final = ClosableWS()
+    attempts = {"n": 0}
+    failures = 15  # well past the old hardcoded limit of 10
+
+    async def fake_connect(url, subprotocols):
+        attempts["n"] += 1
+        if attempts["n"] == 1:
+            return first  # initial connection
+        if attempts["n"] <= 1 + failures:
+            raise ConnectionError("down")  # fail past the old limit of 10
+        return final  # finally reconnect
+
+    sub = RealtimeSubscriber(
+        url="ws://x", token_provider=lambda: "tok",
+        _connect=fake_connect, max_reconnect_attempts=None,
+    )
+    async with sub:
+        await sub.subscribe(["room1"])
+        first.close_stream()
+        for _ in range(5000):
+            if final.sent:
+                break
+            await asyncio.sleep(0)
+        assert final.sent, "subscriber gave up instead of reconnecting forever"
+        # the reconnect happened only after exceeding the old limit of 10
+        assert attempts["n"] == 1 + failures + 1
+        # and it resubscribed the live channel on the new connection
+        assert json.loads(final.sent[0]) == {"type": "subscribe", "channel": "room1"}
+
+
 @pytest.mark.asyncio
 async def test_from_env_builds_minter(monkeypatch, rsa_keypair):
     private_pem, _ = rsa_keypair
