@@ -1,0 +1,35 @@
+# Virtual uv-workspace root for the Python realtime SDK. Two distributables:
+#   realtime-core   — the wire contract (frames, channel grammar, auth)
+#   realtime-client — the SDK that depends on it
+# Both publish to PyPI; consumers `pip install brutalsystems-realtime-client`.
+[tool.uv.workspace]
+members = ["packages/*"]
+
+[tool.uv.sources]
+brutalsystems-realtime-core = { workspace = true }
+brutalsystems-realtime-client = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=1.3.0",
+    "ruff>=0.6",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 110
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "UP", "I", "B"]
+ignore = ["E501", "E402", "E702", "B008"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["realtime_core", "realtime_client"]

@@ -1,0 +1,56 @@
+name: Release (PyPI)
+
+# Publishes the two packages to PyPI via Trusted Publishing (OIDC) — no API token
+# stored anywhere. Fires on a tag like `python-v0.1.0`.
+#
+# Each package is a SEPARATE job in its OWN GitHub environment, because PyPI keys
+# a trusted publisher on (owner, repo, workflow, environment) and rejects two
+# publishers sharing the identical tuple. So the two pending publishers use
+# distinct environments, and the OIDC token from each job must carry the matching
+# environment:
+#   brutalsystems-realtime-core   -> environment `pypi`
+#   brutalsystems-realtime-client -> environment `pypi-client`
+on:
+  push:
+    tags:
+      - 'python-v*'
+
+jobs:
+  realtime-core:
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: '3.13'
+      - name: Build brutalsystems-realtime-core (sdist + wheel)
+        working-directory: python
+        run: uv build --package brutalsystems-realtime-core
+      - name: Publish brutalsystems-realtime-core
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: python/dist/
+
+  realtime-client:
+    runs-on: ubuntu-latest
+    environment: pypi-client
+    needs: [realtime-core]      # publish the client only after core succeeds (client depends on core)
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: '3.13'
+      - name: Build brutalsystems-realtime-client (sdist + wheel)
+        working-directory: python
+        run: uv build --package brutalsystems-realtime-client
+      - name: Publish brutalsystems-realtime-client
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: python/dist/

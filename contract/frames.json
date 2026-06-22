@@ -1,0 +1,118 @@
+{
+  "client": {
+    "ping": {
+      "type": "ping"
+    },
+    "presence:update": {
+      "channel": "presence-room1",
+      "data": {
+        "connection_id": "c1",
+        "info": {
+          "status": "online"
+        },
+        "user_id": "u1"
+      },
+      "type": "presence:update"
+    },
+    "publish": {
+      "channel": "room1",
+      "data": {
+        "event": "msg",
+        "payload": {
+          "text": "hi"
+        }
+      },
+      "type": "publish"
+    },
+    "subscribe": {
+      "channel": "room1",
+      "type": "subscribe"
+    },
+    "unsubscribe": {
+      "channel": "room1",
+      "type": "unsubscribe"
+    }
+  },
+  "server": {
+    "error": {
+      "code": "error",
+      "error": "boom",
+      "type": "error"
+    },
+    "message": {
+      "channel": "room1",
+      "data": {
+        "event": "msg",
+        "payload": {
+          "text": "hi"
+        }
+      },
+      "sender_id": "u1",
+      "type": "message"
+    },
+    "pong": {
+      "type": "pong"
+    },
+    "presence:join": {
+      "channel": "presence-room1",
+      "data": {
+        "connection_id": "c1",
+        "info": {
+          "status": "online"
+        },
+        "user_id": "u1"
+      },
+      "type": "presence:join"
+    },
+    "presence:leave": {
+      "channel": "presence-room1",
+      "data": {
+        "connection_id": "c1",
+        "info": {
+          "status": "online"
+        },
+        "user_id": "u1"
+      },
+      "type": "presence:leave"
+    },
+    "presence:state": {
+      "channel": "presence-room1",
+      "data": {
+        "members": [
+          {
+            "connection_id": "c1",
+            "info": {
+              "status": "online"
+            },
+            "user_id": "u1"
+          }
+        ]
+      },
+      "type": "presence:state"
+    },
+    "presence:update": {
+      "channel": "presence-room1",
+      "data": {
+        "connection_id": "c1",
+        "info": {
+          "status": "online"
+        },
+        "user_id": "u1"
+      },
+      "type": "presence:update"
+    },
+    "subscription_error": {
+      "channel": "room1",
+      "error": "denied",
+      "type": "subscription_error"
+    },
+    "subscription_succeeded": {
+      "channel": "room1",
+      "type": "subscription_succeeded"
+    },
+    "unsubscribed": {
+      "channel": "room1",
+      "type": "unsubscribed"
+    }
+  }
+}

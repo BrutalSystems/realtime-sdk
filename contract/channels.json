@@ -1,0 +1,32 @@
+{
+  "cases": [
+    {
+      "name": "room1",
+      "type": "public"
+    },
+    {
+      "name": "private-room1",
+      "type": "private"
+    },
+    {
+      "name": "presence-room1",
+      "type": "presence"
+    },
+    {
+      "name": "presence:room1",
+      "type": "public"
+    },
+    {
+      "name": "chat.t1.u1.u2",
+      "type": "public"
+    },
+    {
+      "name": "notify.events",
+      "type": "public"
+    },
+    {
+      "name": "task.run.123",
+      "type": "public"
+    }
+  ]
+}
