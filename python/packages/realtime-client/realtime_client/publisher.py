@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 from collections.abc import Awaitable, Callable
 from typing import Any
 
@@ -19,6 +20,27 @@ import httpx
 from realtime_core import bearer_subprotocol, publish_frame
 
 logger = logging.getLogger(__name__)
+
+# Historical default — the server mounts its REST routers here unless RT_API_PREFIX
+# overrides it. Kept identical to the server's default so behavior is byte-for-byte
+# unchanged when neither side configures a prefix.
+_DEFAULT_API_PREFIX = "/api/v1"
+
+
+def _resolve_api_prefix(api_prefix: str | None) -> str:
+    """Resolve + validate the REST API prefix.
+
+    Mirrors the server's RT_API_PREFIX handling so the client auto-aligns: an
+    explicit arg wins, else the ``RT_API_PREFIX`` env var, else the historical
+    default. Must start with ``/``; a trailing slash is stripped.
+    """
+    prefix = api_prefix if api_prefix is not None else os.environ.get("RT_API_PREFIX", _DEFAULT_API_PREFIX)
+    if not prefix.startswith("/"):
+        raise ValueError(f"api_prefix must start with '/': {prefix!r}")
+    prefix = prefix.rstrip("/")
+    if not prefix:
+        raise ValueError("api_prefix must not be '/' or empty")
+    return prefix
 
 # websockets keepalive: ping every 20s so a dead socket surfaces promptly.
 _PING_INTERVAL = 20
@@ -157,9 +179,10 @@ class RealtimePublisher:
 
 async def rest_publish(
     base_url: str, channel: str, data: dict[str, Any], *,
-    token: str, client: httpx.AsyncClient | None = None,
+    token: str, api_prefix: str | None = None, client: httpx.AsyncClient | None = None,
 ) -> dict[str, Any]:
-    url = f"{base_url}/api/v1/channels/{channel}/messages"
+    prefix = _resolve_api_prefix(api_prefix)
+    url = f"{base_url}{prefix}/channels/{channel}/messages"
     headers = {"Authorization": f"Bearer {token}"}
     owns = client is None
     client = client or httpx.AsyncClient()

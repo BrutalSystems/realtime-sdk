@@ -89,6 +89,27 @@ make check        # ruff + pytest
 make pull-contract  # re-vendor contract fixtures from the service repo
 ```
 
+### Configurable REST prefix (0.4.0)
+
+`rest_publish` builds its URL under a configurable API prefix so it stays aligned
+with a server started with a non-default `RT_API_PREFIX` (see the service repo).
+Resolution order: explicit `api_prefix=` arg → `RT_API_PREFIX` env var → the
+historical `/api/v1` default.
+
+```python
+# Auto-aligns when the server runs with RT_API_PREFIX=/api/rt/v1 and the client
+# process has the same env var set — no code change needed.
+await rest_publish(base_url, "channel.123", {"x": 1}, token=tok)
+
+# Or pin it explicitly (overrides the env var):
+await rest_publish(base_url, "channel.123", {"x": 1}, token=tok, api_prefix="/api/rt/v1")
+```
+
+With neither the env var nor the arg set, behavior is byte-identical to ≤ 0.3.0
+(`/api/v1`). WebSocket paths (`/ws`, `/realtime`) are unaffected by the prefix.
+Consumers that may run against a prefixed server should pin
+`brutalsystems-realtime-client >= 0.4.0`.
+
 ## Versioning
 
 The Python (and future TS/.NET) SDKs version independently (tags

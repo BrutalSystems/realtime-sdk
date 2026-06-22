@@ -187,3 +187,73 @@ async def test_rest_publish_posts_typed_body_with_bearer():
     assert captured["auth"] == "Bearer tok"
     assert captured["body"] == {"data": {"x": 1}}
     assert result == {"status": "published", "channel": "room1"}
+
+
+@pytest.fixture
+def _clear_rt_api_prefix(monkeypatch):
+    """Isolate prefix tests from any RT_API_PREFIX in the dev/CI environment."""
+    monkeypatch.delenv("RT_API_PREFIX", raising=False)
+
+
+def _url_capture_client() -> tuple[dict, httpx.AsyncClient]:
+    captured: dict = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["url"] = str(request.url)
+        return httpx.Response(200, json={"status": "published", "channel": "room1"})
+
+    return captured, httpx.AsyncClient(transport=httpx.MockTransport(handler))
+
+
+@pytest.mark.asyncio
+async def test_rest_publish_default_prefix(_clear_rt_api_prefix):
+    captured, client = _url_capture_client()
+    async with client:
+        await rest_publish("http://api", "room1", {"x": 1}, token="tok", client=client)
+    assert captured["url"] == "http://api/api/v1/channels/room1/messages"
+
+
+@pytest.mark.asyncio
+async def test_rest_publish_explicit_prefix(_clear_rt_api_prefix):
+    captured, client = _url_capture_client()
+    async with client:
+        await rest_publish(
+            "http://api", "room1", {"x": 1}, token="tok", api_prefix="/api/rt/v1", client=client,
+        )
+    assert captured["url"] == "http://api/api/rt/v1/channels/room1/messages"
+
+
+@pytest.mark.asyncio
+async def test_rest_publish_prefix_from_env(monkeypatch):
+    monkeypatch.setenv("RT_API_PREFIX", "/api/rt/v1")
+    captured, client = _url_capture_client()
+    async with client:
+        await rest_publish("http://api", "room1", {"x": 1}, token="tok", client=client)
+    assert captured["url"] == "http://api/api/rt/v1/channels/room1/messages"
+
+
+@pytest.mark.asyncio
+async def test_rest_publish_explicit_arg_overrides_env(monkeypatch):
+    monkeypatch.setenv("RT_API_PREFIX", "/api/env/v1")
+    captured, client = _url_capture_client()
+    async with client:
+        await rest_publish(
+            "http://api", "room1", {"x": 1}, token="tok", api_prefix="/api/explicit/v1", client=client,
+        )
+    assert captured["url"] == "http://api/api/explicit/v1/channels/room1/messages"
+
+
+@pytest.mark.asyncio
+async def test_rest_publish_trailing_slash_normalized(_clear_rt_api_prefix):
+    captured, client = _url_capture_client()
+    async with client:
+        await rest_publish(
+            "http://api", "room1", {"x": 1}, token="tok", api_prefix="/api/rt/v1/", client=client,
+        )
+    assert captured["url"] == "http://api/api/rt/v1/channels/room1/messages"
+
+
+@pytest.mark.asyncio
+async def test_rest_publish_missing_leading_slash_rejected(_clear_rt_api_prefix):
+    with pytest.raises(ValueError):
+        await rest_publish("http://api", "room1", {"x": 1}, token="tok", api_prefix="api/v1")
