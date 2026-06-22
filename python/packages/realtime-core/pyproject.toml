@@ -1,6 +1,6 @@
 [project]
 name = "brutalsystems-realtime-core"
-version = "0.3.0"
+version = "0.4.0"
 description = "Shared wire contract for the realtime service — WS frames, channel grammar, and JWT auth. The single source of truth depended on by both the SDK and the service. Import as `realtime_core`."
 requires-python = ">=3.13"
 dependencies = [

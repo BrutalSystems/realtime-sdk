@@ -21,6 +21,21 @@ build and publish each package with your standard PyPI tooling.
 
 ## Changelog
 
+### 0.4.0
+
+Additive — closes a silent-404 trap when publishing against a server with a
+non-default API prefix. No breaking changes; default behavior is byte-identical
+to <= 0.3.0.
+
+- `rest_publish` gains `api_prefix`; the URL is built as
+  `{base}{prefix}/channels/{c}/messages`. Resolution: explicit `api_prefix` arg
+  → `RT_API_PREFIX` env → `/api/v1` default (resolved at call time, mirroring the
+  server). Validates a leading `/`, strips a trailing `/`.
+- `rest_publish` is the only REST helper; the WS subscriber/publisher are
+  untouched.
+- `brutalsystems-realtime-core` bumped to 0.4.0 in lockstep (the `==` pin stays
+  matched); the changes are client-side.
+
 ### 0.3.0
 
 Additive — two opt-in behaviors for a long-running daemon consumer that
