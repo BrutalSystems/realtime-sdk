@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/BrutalSystems.Realtime.Client/BrutalSystems.Realtime.Client.csproj" />
+    <Project Path="src/BrutalSystems.Realtime.Core/BrutalSystems.Realtime.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/BrutalSystems.Realtime.Client.Tests/BrutalSystems.Realtime.Client.Tests.csproj" />
+    <Project Path="tests/BrutalSystems.Realtime.Core.Tests/BrutalSystems.Realtime.Core.Tests.csproj" />
+  </Folder>
+</Solution>

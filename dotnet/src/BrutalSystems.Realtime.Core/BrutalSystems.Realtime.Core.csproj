@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>BrutalSystems.Realtime.Core</PackageId>
+    <Description>Wire contract for the Brutal Systems realtime service: RS256 token minting, JWKS, channel grammar, and WebSocket frame helpers.</Description>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>BrutalSystems.Realtime.Client</PackageId>
+    <Description>Client transport for the Brutal Systems realtime service: REST publisher.</Description>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BrutalSystems.Realtime.Core\BrutalSystems.Realtime.Core.csproj" />
+  </ItemGroup>
+</Project>
