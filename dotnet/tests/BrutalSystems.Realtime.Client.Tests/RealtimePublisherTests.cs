@@ -50,7 +50,7 @@ public class RealtimePublisherTests
         await pub.PublishAsync("dm.inbox.t1.user one", new { x = 1 });
 
         Assert.Equal("http://realtime:8101/rt/channels/dm.inbox.t1.user%20one/messages",
-            handler.Request!.RequestUri!.ToString());
+            handler.Request!.RequestUri!.AbsoluteUri);
     }
 
     [Fact]

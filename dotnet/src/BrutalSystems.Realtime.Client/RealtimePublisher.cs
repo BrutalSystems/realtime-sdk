@@ -35,11 +35,7 @@ public sealed class RealtimePublisher
 
     public async Task PublishAsync(string channel, object data, CancellationToken ct = default)
     {
-        var urlString = $"{_baseUrl}{_prefix}/channels/{Uri.EscapeDataString(channel)}/messages";
-        // Use DangerousDisablePathAndQueryCanonicalization so the Uri preserves percent-encoding
-        // (the default Uri constructor unescapes %20 → space in ToString()).
-        var opts = new UriCreationOptions { DangerousDisablePathAndQueryCanonicalization = true };
-        Uri.TryCreate(urlString, opts, out var url);
+        var url = $"{_baseUrl}{_prefix}/channels/{Uri.EscapeDataString(channel)}/messages";
         using var req = new HttpRequestMessage(HttpMethod.Post, url)
         {
             Content = JsonContent.Create(new { data }, options: JsonOpts),
