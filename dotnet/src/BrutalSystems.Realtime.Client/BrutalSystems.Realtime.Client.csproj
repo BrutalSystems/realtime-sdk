@@ -5,6 +5,8 @@
     <IsPackable>true</IsPackable>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\BrutalSystems.Realtime.Core\BrutalSystems.Realtime.Core.csproj" />
+    <ProjectReference Include="..\BrutalSystems.Realtime.Core\BrutalSystems.Realtime.Core.csproj">
+      <PrivateAssets>none</PrivateAssets>
+    </ProjectReference>
   </ItemGroup>
 </Project>
