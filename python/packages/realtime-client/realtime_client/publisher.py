@@ -13,13 +13,43 @@ import json
 import logging
 import os
 from collections.abc import Awaitable, Callable
-from typing import Any
+from typing import Any, cast
 
 import httpx
 
 from realtime_core import bearer_subprotocol, publish_frame
 
 logger = logging.getLogger(__name__)
+
+_TRACE_KEYS = ("traceparent", "tracestate")
+
+
+def _inject_trace_context(frame: dict[str, Any]) -> None:
+    """Stamp the active span's W3C trace context onto a WebSocket publish frame
+    as top-level ``traceparent``/``tracestate`` siblings, in place.
+
+    The realtime server reads these as the parent of its publish/deliver spans
+    and re-injects them downstream, so publisher -> realtime -> subscriber is one
+    linked trace. WebSocket-only: REST publishes propagate via the HTTP
+    ``traceparent`` header instead (handled by httpx instrumentation).
+
+    OpenTelemetry is an OPTIONAL dependency of this SDK — when it isn't installed
+    the import fails and this is a no-op. The configured W3C propagator also
+    writes nothing for an absent/invalid span context (tracing off, no active
+    span, or ``OTEL_SDK_DISABLED``), so an un-traced publish injects no keys and
+    the frame stays byte-identical to the pre-OTel wire format. Must run at
+    enqueue/publish time — the originating span has ended by the time the
+    background worker sends."""
+    try:
+        from opentelemetry.propagate import inject
+    except ImportError:
+        return
+    carrier: dict[str, str] = {}
+    inject(carrier)
+    for key in _TRACE_KEYS:
+        if carrier.get(key):
+            frame[key] = carrier[key]
+
 
 # Historical default — the server mounts its REST routers here unless RT_API_PREFIX
 # overrides it. Kept identical to the server's default so behavior is byte-for-byte
@@ -49,8 +79,11 @@ _PING_INTERVAL = 20
 async def _default_connect(url: str, subprotocols: list[str]) -> Any:
     import websockets
 
+    # websockets types `subprotocols` as Sequence[Subprotocol] (a NewType over
+    # str); our plain list[str] is wire-identical, so cast rather than couple to
+    # the websockets typing module.
     return await websockets.connect(
-        url, subprotocols=subprotocols or None, ping_interval=_PING_INTERVAL,
+        url, subprotocols=cast("Any", subprotocols or None), ping_interval=_PING_INTERVAL,
     )
 
 
@@ -94,6 +127,7 @@ class RealtimePublisher:
     async def publish(self, channel: str, data: dict[str, Any], *, scope: str | None = None) -> None:
         """Non-blocking enqueue. On a full queue, drop the OLDEST event."""
         frame = publish_frame(channel, data, scope=scope)
+        _inject_trace_context(frame)
         try:
             self._queue.put_nowait(frame)
         except asyncio.QueueFull:
@@ -130,6 +164,7 @@ class RealtimePublisher:
         publish_now — not both concurrently, since they share the same socket.
         """
         frame = publish_frame(channel, data, scope=scope)
+        _inject_trace_context(frame)
         try:
             await self._send_one(frame)
         except Exception:

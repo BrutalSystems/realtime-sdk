@@ -1,10 +1,10 @@
 [project]
 name = "brutalsystems-realtime-client"
-version = "0.4.0"
+version = "0.5.0"
 description = "Python SDK for the realtime service — WebSocket subscriber + publisher and a generic JWT minter. `pip install brutalsystems-realtime-client`, then `import realtime_client`."
 requires-python = ">=3.13"
 dependencies = [
-    "brutalsystems-realtime-core==0.4.0",
+    "brutalsystems-realtime-core==0.5.0",
     "websockets>=13",
     "httpx>=0.27",
 ]

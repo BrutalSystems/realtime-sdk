@@ -11,7 +11,7 @@ import asyncio
 import json
 import os
 from collections.abc import AsyncIterator, Awaitable, Callable
-from typing import Any
+from typing import Any, cast
 
 import websockets
 
@@ -28,7 +28,10 @@ _BACKOFF_SECONDS = (0.1, 0.5, 1.0, 2.0, 5.0)
 
 
 async def _default_connect(url: str, subprotocols: list[str]) -> Any:
-    return await websockets.connect(url, subprotocols=subprotocols)
+    # websockets types `subprotocols` as Sequence[Subprotocol] (a NewType over
+    # str); our plain list[str] is wire-identical, so cast rather than couple to
+    # the websockets typing module.
+    return await websockets.connect(url, subprotocols=cast("Any", subprotocols))
 
 
 class RealtimeSubscriber:
@@ -64,6 +67,7 @@ class RealtimeSubscriber:
                     ("REALTIME_JWT_PRIVATE_KEY", private_key)) if not v]
         if missing:
             raise RuntimeError(f"missing env vars for from_env: {', '.join(missing)}")
+        assert url and issuer and private_key  # narrowed by the `missing` check above
         minter = TokenMinter(
             private_key=private_key, issuer=issuer,
             subject=owner_service, tenant_id=tenant_id,

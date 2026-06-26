@@ -1,4 +1,4 @@
-.PHONY: sync check test lint pull-contract
+.PHONY: sync check test lint typecheck pull-contract
 
 sync:
 	uv sync
@@ -6,10 +6,13 @@ sync:
 lint:
 	uv run ruff check .
 
+typecheck:
+	uv run pyright packages/
+
 test:
 	uv run pytest
 
-check: lint test
+check: lint typecheck test
 
 # Path to your local checkout of the private realtime service repo that owns
 # the canonical contract fixtures. Defaults to a sibling checkout named
