@@ -60,6 +60,60 @@ async def test_publish_event_wraps_event_payload():
 
 
 @pytest.mark.asyncio
+async def test_publish_injects_trace_context_when_span_active():
+    """The server links publisher -> realtime -> subscriber into one trace by
+    reading top-level ``traceparent``/``tracestate`` siblings off the WS frame.
+    Context must be captured at publish() time (the originating span has ended by
+    the time the worker sends), so assert the sent frame carries a valid W3C
+    ``traceparent`` when a recording span is active."""
+    pytest.importorskip("opentelemetry.sdk.trace")
+    from opentelemetry.sdk.trace import TracerProvider
+
+    tracer = TracerProvider().get_tracer("test")
+    fake = FakeWS()
+
+    async def fake_connect(url, subprotocols):
+        return fake
+
+    async with RealtimePublisher(url="ws://x", token_provider=lambda: "tok", _connect=fake_connect) as pub:
+        with tracer.start_as_current_span("run.started"):
+            await pub.publish("room1", {"event": "msg", "payload": {}})
+        await _wait(lambda: bool(fake.sent))
+
+    frame = json.loads(fake.sent[0])
+    tp = frame.get("traceparent")
+    assert tp is not None, "expected traceparent injected as a top-level frame sibling"
+    version, trace_id, span_id, flags = tp.split("-")
+    assert (len(version), len(trace_id), len(span_id), len(flags)) == (2, 32, 16, 2)
+    # Trace keys live at the top level, never inside data (realtime contract).
+    assert "traceparent" not in frame["data"]
+
+
+@pytest.mark.asyncio
+async def test_publish_omits_trace_context_without_active_span():
+    """No active span (tracing off / OTEL_SDK_DISABLED / OTel not installed) =>
+    the propagator writes nothing, so the frame stays byte-identical to the
+    pre-OTel wire format: no ``traceparent``/``tracestate`` keys. Guards against
+    ever unconditionally stamping the frame."""
+    fake = FakeWS()
+
+    async def fake_connect(url, subprotocols):
+        return fake
+
+    async with RealtimePublisher(url="ws://x", token_provider=lambda: "tok", _connect=fake_connect) as pub:
+        await pub.publish("room1", {"event": "msg", "payload": {"text": "hi"}})
+        await _wait(lambda: bool(fake.sent))
+
+    frame = json.loads(fake.sent[0])
+    assert "traceparent" not in frame
+    assert "tracestate" not in frame
+    assert frame == {
+        "type": "publish", "channel": "room1",
+        "data": {"event": "msg", "payload": {"text": "hi"}},
+    }
+
+
+@pytest.mark.asyncio
 async def test_publish_drops_oldest_when_queue_full():
     # Worker not started, so the queue fills and the drop-oldest path runs.
     pub = RealtimePublisher(url="ws://x", token_provider=lambda: "t", max_queue_size=2)

@@ -21,6 +21,27 @@ build and publish each package with your standard PyPI tooling.
 
 ## Changelog
 
+### 0.5.0
+
+Additive — the WS publisher injects W3C trace context so publisher → realtime →
+subscriber links into one distributed trace. No breaking changes; frames are
+byte-identical to <= 0.4.0 when tracing is off.
+
+- `RealtimePublisher.publish` / `publish_now` (and `publish_event` via `publish`)
+  stamp the active span's `traceparent` / `tracestate` onto the WS frame as
+  top-level siblings, captured at publish time (the originating span has ended by
+  the time the background worker sends). The realtime server reads them as the
+  parent of its publish/deliver spans.
+- **OpenTelemetry is an optional dependency** — imported lazily; the publisher
+  no-ops when OTel isn't installed. The W3C propagator also writes nothing when
+  there's no active span (tracing off / `OTEL_SDK_DISABLED`), so an un-traced
+  publish injects no keys and the frame is byte-identical to the prior wire
+  format. Runtime deps are unchanged; `opentelemetry-sdk` is dev-only (tests).
+- REST publishing (`rest_publish`) is untouched — it propagates via the HTTP
+  `traceparent` header, handled by the caller's httpx instrumentation.
+- `brutalsystems-realtime-core` bumped to 0.5.0 in lockstep (the `==` pin stays
+  matched); the change is client-side.
+
 ### 0.4.0
 
 Additive — closes a silent-404 trap when publishing against a server with a
