@@ -115,3 +115,7 @@ Consumers that may run against a prefixed server should pin
 The Python (and future TS/.NET) SDKs version independently (tags
 `python-vX.Y.Z`, etc.) against the same wire contract. A breaking contract
 change is a coordinated major bump across all languages plus a fixture update.
+
+## Mirror
+
+This repository is mirrored read-only (code + tags) to [`Springthrough/realtime-sdk`](https://github.com/Springthrough/realtime-sdk) by the **Mirror to Springthrough** GitHub Action (`.github/workflows/mirror.yml`). Every push force-syncs all branches and tags to the mirror. Do not edit the Springthrough copy directly — changes there are overwritten on the next sync.
