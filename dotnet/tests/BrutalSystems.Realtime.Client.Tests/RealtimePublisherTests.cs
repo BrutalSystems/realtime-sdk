@@ -69,6 +69,33 @@ public class RealtimePublisherTests
     }
 
     [Fact]
+    public async Task PublishAsync_omits_scope_by_default()
+    {
+        var handler = new CapturingHandler();
+        using var http = new HttpClient(handler);
+        var pub = new RealtimePublisher(http, () => "t", "http://realtime:8101");
+
+        await pub.PublishAsync("room1", new { x = 1 });
+
+        using var doc = JsonDocument.Parse(handler.Body!);
+        Assert.False(doc.RootElement.TryGetProperty("scope", out _));
+    }
+
+    [Fact]
+    public async Task PublishAsync_sends_explicit_scope()
+    {
+        var handler = new CapturingHandler();
+        using var http = new HttpClient(handler);
+        var pub = new RealtimePublisher(http, () => "t", "http://realtime:8101");
+
+        await pub.PublishEventAsync("github.workflow.acme.repo", "workflow_run", new { id = 1 }, scope: "t1");
+
+        using var doc = JsonDocument.Parse(handler.Body!);
+        Assert.Equal("t1", doc.RootElement.GetProperty("scope").GetString());
+        Assert.Equal("workflow_run", doc.RootElement.GetProperty("data").GetProperty("event").GetString());
+    }
+
+    [Fact]
     public async Task PublishAsync_throws_on_non_success()
     {
         var handler = new CapturingHandler { Status = HttpStatusCode.InternalServerError };
