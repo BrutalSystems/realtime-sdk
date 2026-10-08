@@ -33,12 +33,20 @@ public sealed class RealtimePublisher
         return p.TrimEnd('/');
     }
 
-    public async Task PublishAsync(string channel, object data, CancellationToken ct = default)
+    public Task PublishAsync(string channel, object data, CancellationToken ct = default) =>
+        PublishAsync(channel, data, scope: null, ct);
+
+    /// <summary>Publishes into an explicit tenant <paramref name="scope"/>. Under the service's tenant_mode a
+    /// system publisher (tenant_id "_system") serves every tenant, so it must name the target tenant here —
+    /// otherwise the message lands in the "_system:" namespace no tenant subscriber listens on. A client
+    /// token may only name its own tenant. Null = the caller's own tenant (the default behavior).</summary>
+    public async Task PublishAsync(string channel, object data, string? scope, CancellationToken ct = default)
     {
         var url = $"{_baseUrl}{_prefix}/channels/{Uri.EscapeDataString(channel)}/messages";
+        object body = scope is null ? new { data } : new { data, scope };
         using var req = new HttpRequestMessage(HttpMethod.Post, url)
         {
-            Content = JsonContent.Create(new { data }, options: JsonOpts),
+            Content = JsonContent.Create(body, options: JsonOpts),
         };
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _tokenProvider());
         using var resp = await _http.SendAsync(req, ct);
@@ -46,5 +54,9 @@ public sealed class RealtimePublisher
     }
 
     public Task PublishEventAsync(string channel, string @event, object payload, CancellationToken ct = default) =>
-        PublishAsync(channel, new { @event, payload }, ct);
+        PublishAsync(channel, new { @event, payload }, scope: null, ct);
+
+    /// <inheritdoc cref="PublishAsync(string, object, string?, CancellationToken)"/>
+    public Task PublishEventAsync(string channel, string @event, object payload, string? scope, CancellationToken ct = default) =>
+        PublishAsync(channel, new { @event, payload }, scope, ct);
 }
