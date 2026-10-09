@@ -214,15 +214,24 @@ class RealtimePublisher:
 
 async def rest_publish(
     base_url: str, channel: str, data: dict[str, Any], *,
-    token: str, api_prefix: str | None = None, client: httpx.AsyncClient | None = None,
+    token: str, scope: str | None = None, api_prefix: str | None = None,
+    client: httpx.AsyncClient | None = None,
 ) -> dict[str, Any]:
+    """POST a message to a channel over REST.
+
+    ``scope`` is omitted from the body when ``None``. A ``_system`` publisher
+    names the target tenant here; ``None`` means the caller's own tenant.
+    """
     prefix = _resolve_api_prefix(api_prefix)
     url = f"{base_url}{prefix}/channels/{channel}/messages"
     headers = {"Authorization": f"Bearer {token}"}
+    body: dict[str, Any] = {"data": data}
+    if scope is not None:
+        body["scope"] = scope
     owns = client is None
     client = client or httpx.AsyncClient()
     try:
-        resp = await client.post(url, json={"data": data}, headers=headers)
+        resp = await client.post(url, json=body, headers=headers)
         resp.raise_for_status()
         return resp.json()
     finally:

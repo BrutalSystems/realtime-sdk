@@ -13,12 +13,19 @@ from realtime_core import (
     unsubscribe_frame,
 )
 
+_TRACE_KEYS = ("traceparent", "tracestate")
+
+
+def _without_trace(frame: dict) -> dict:
+    return {k: v for k, v in frame.items() if k not in _TRACE_KEYS}
+
 
 def test_client_frames_match_fixture(frames_fixture):
     client = frames_fixture["client"]
     assert subscribe_frame("room1") == client["subscribe"]
     assert unsubscribe_frame("room1") == client["unsubscribe"]
-    assert publish_frame("room1", {"event": "msg", "payload": {"text": "hi"}}) == client["publish"]
+    # The fixture shows a traced publish; an un-traced publish carries no trace keys (0.5.0).
+    assert publish_frame("room1", {"event": "msg", "payload": {"text": "hi"}}) == _without_trace(client["publish"])
     assert ping_frame() == client["ping"]
 
 
@@ -81,3 +88,9 @@ def test_parse_inbound_ignores_non_message_frames(frames_fixture):
 def test_publish_frame_includes_scope_when_given():
     frame = publish_frame("room1", {"x": 1}, scope="_platform")
     assert frame == {"type": "publish", "channel": "room1", "data": {"x": 1}, "scope": "_platform"}
+
+
+def test_fixture_pins_trace_keys_as_top_level_siblings(frames_fixture):
+    for frame in (frames_fixture["client"]["publish"], frames_fixture["server"]["message"]):
+        assert frame["traceparent"].startswith("00-")
+        assert "traceparent" not in frame["data"]

@@ -311,3 +311,29 @@ async def test_rest_publish_trailing_slash_normalized(_clear_rt_api_prefix):
 async def test_rest_publish_missing_leading_slash_rejected(_clear_rt_api_prefix):
     with pytest.raises(ValueError):
         await rest_publish("http://api", "room1", {"x": 1}, token="tok", api_prefix="api/v1")
+
+
+@pytest.mark.asyncio
+async def test_rest_publish_sends_scope_when_given(_clear_rt_api_prefix):
+    captured: dict = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["body"] = json.loads(request.content)
+        return httpx.Response(200, json={"status": "published", "channel": "room1"})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        await rest_publish("http://api", "room1", {"x": 1}, token="t", scope="t1", client=client)
+    assert captured["body"] == {"data": {"x": 1}, "scope": "t1"}
+
+
+@pytest.mark.asyncio
+async def test_rest_publish_omits_scope_by_default(_clear_rt_api_prefix):
+    captured: dict = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["body"] = json.loads(request.content)
+        return httpx.Response(200, json={"status": "published", "channel": "room1"})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        await rest_publish("http://api", "room1", {"x": 1}, token="t", client=client)
+    assert captured["body"] == {"data": {"x": 1}}

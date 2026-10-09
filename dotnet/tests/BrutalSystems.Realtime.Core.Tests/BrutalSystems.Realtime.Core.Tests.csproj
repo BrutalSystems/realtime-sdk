@@ -14,5 +14,6 @@
     <!-- Conformance fixtures: the canonical contract, loaded verbatim at test time. -->
     <None Include="..\..\..\contract\frames.json" Link="contract\frames.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\..\contract\channels.json" Link="contract\channels.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\contract\announcements.json" Link="contract\announcements.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

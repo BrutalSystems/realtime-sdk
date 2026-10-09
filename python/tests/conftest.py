@@ -19,6 +19,11 @@ def channels_fixture() -> dict:
 
 
 @pytest.fixture(scope="session")
+def announcements_fixture() -> dict:
+    return json.loads((_CONTRACT / "announcements.json").read_text())
+
+
+@pytest.fixture(scope="session")
 def rsa_keypair() -> tuple[str, str]:
     """(private_pem, public_pem) for a throwaway RSA key used in auth tests."""
     from cryptography.hazmat.primitives import serialization
