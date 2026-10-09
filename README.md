@@ -110,6 +110,27 @@ With neither the env var nor the arg set, behavior is byte-identical to ≤ 0.3.
 Consumers that may run against a prefixed server should pin
 `brutalsystems-realtime-client >= 0.4.0`.
 
+### Announcements
+
+`AnnouncementsClient` publishes banners through the service's `/announcements`
+API (`_system` callers only). Both targets are first-class and there is no
+default scope: `PLATFORM` reaches every tenant, a tenant id reaches one.
+Datetimes must be timezone-aware. `critical` announcements cannot be
+dismissible (the server rejects it with 422).
+
+```python
+from realtime_client import AnnouncementsClient
+from realtime_core import PLATFORM, Severity
+
+async with AnnouncementsClient("http://realtime:8101", token_provider=system_minter) as ann:
+    await ann.create(scope=PLATFORM, severity=Severity.WARNING, title="Maintenance",
+                     body="DB down at 3:05 PM. Save your work.", ends_at=ends)       # every tenant
+    await ann.create(scope=tenant_id, severity=Severity.INFO, title="…", body="…", ends_at=ends)  # one tenant
+```
+
+Failures raise `AnnouncementsApiError` (`.status`, `.detail`). Also available:
+`update`, `clear`, `list`.
+
 ## Versioning
 
 The Python (and future TS/.NET) SDKs version independently (tags
