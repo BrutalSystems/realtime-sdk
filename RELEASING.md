@@ -23,12 +23,14 @@ build and publish each package with your standard PyPI tooling.
 
 ### 0.6.0 (Python)
 
-Additive — tenant and platform announcements. No breaking changes; existing
-publish and subscribe calls are unchanged. Requires a realtime service with the
+Additive — tenant and platform announcements. No breaking changes to existing
+publish and subscribe calls; `realtime_core` gains new public API (below). Requires a realtime service with the
 `/announcements` API.
 
 - New `AnnouncementsClient` for tenant and platform announcements (`_system`
   publishers only).
+- `brutalsystems-realtime-core` adds public API: `Announcement`, `Severity`,
+  `AnnouncementEvent`, `PLATFORM`, `ANNOUNCEMENTS_CHANNEL`.
 - `rest_publish` gains an optional `scope=` argument (parity with dotnet);
   omitting it keeps the previous behavior.
 - Contract re-vendored (trace keys, `announcements.json`).
