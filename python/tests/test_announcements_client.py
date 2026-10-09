@@ -120,6 +120,17 @@ async def test_error_carries_status_and_detail():
     assert "Too many" in ei.value.detail
 
 
+async def test_non_string_detail_is_json_encoded():
+    def handler(r: httpx.Request) -> httpx.Response:
+        return httpx.Response(422, json={"detail": [{"loc": ["body", "x"], "msg": "m"}]})
+
+    async with make(handler) as c:
+        with pytest.raises(AnnouncementsApiError) as ei:
+            await c.create(scope="t1", severity=Severity.INFO, title="T", body="B", ends_at=ENDS)
+    assert ei.value.status == 422
+    assert json.loads(ei.value.detail)[0]["msg"] == "m"
+
+
 async def test_naive_datetime_rejected_client_side():
     def handler(r: httpx.Request) -> httpx.Response:  # pragma: no cover — must not be called
         raise AssertionError("request sent")

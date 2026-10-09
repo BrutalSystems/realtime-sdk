@@ -131,6 +131,10 @@ async with AnnouncementsClient("http://realtime:8101", token_provider=system_min
 Failures raise `AnnouncementsApiError` (`.status`, `.detail`). Also available:
 `update`, `clear`, `list`.
 
+`update` replaces the announcement - pass every field you want to keep; only
+`starts_at` is preserved when omitted. `create` is not idempotent - if a create
+times out it may still have been stored; `list` before retrying.
+
 ## Versioning
 
 The Python (and future TS/.NET) SDKs version independently (tags

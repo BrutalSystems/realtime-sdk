@@ -6,6 +6,7 @@ id for one tenant. There is no default."""
 from __future__ import annotations
 
 import builtins
+import json
 from collections.abc import Callable
 from datetime import datetime
 from typing import Any, Self
@@ -67,7 +68,8 @@ class AnnouncementsClient:
         resp = await self._client.request(method, url, headers=self._headers(), **kw)
         if resp.is_error:
             try:
-                detail = str(resp.json().get("detail", resp.text))
+                raw = resp.json().get("detail", resp.text)
+                detail = raw if isinstance(raw, str) else json.dumps(raw)
             except (ValueError, AttributeError):
                 detail = resp.text
             raise AnnouncementsApiError(resp.status_code, detail)
@@ -88,12 +90,22 @@ class AnnouncementsClient:
     async def create(self, *, scope: str, severity: Severity | str, title: str, body: str, ends_at: datetime,
                      starts_at: datetime | None = None, event_at: datetime | None = None,
                      dismissible: bool | None = None, requested_by: str | None = None) -> Announcement:
+        """Create an announcement.
+
+        create is not idempotent: if a create times out it may still have been
+        stored; list before retrying."""
         payload = self._body(scope, severity, title, body, ends_at, starts_at, event_at, dismissible, requested_by)
         return Announcement.model_validate(await self._send("POST", self._root, json=payload))
 
     async def update(self, announcement_id: str, *, scope: str, severity: Severity | str, title: str, body: str,
                      ends_at: datetime, starts_at: datetime | None = None, event_at: datetime | None = None,
                      dismissible: bool | None = None, requested_by: str | None = None) -> Announcement:
+        """Replace an announcement (PUT; this is not a patch).
+
+        update replaces the announcement - pass every field you want to keep;
+        only starts_at is preserved when omitted. Omitted event_at and
+        requested_by become null, and an omitted dismissible returns to the
+        severity default."""
         payload = self._body(scope, severity, title, body, ends_at, starts_at, event_at, dismissible, requested_by)
         url = f"{self._root}/{quote(announcement_id, safe='')}"
         return Announcement.model_validate(await self._send("PUT", url, json=payload))
