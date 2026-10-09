@@ -21,6 +21,26 @@ build and publish each package with your standard PyPI tooling.
 
 ## Changelog
 
+### 0.6.0 (Python)
+
+Additive — tenant and platform announcements. No breaking changes; existing
+publish and subscribe calls are unchanged. Requires a realtime service with the
+`/announcements` API.
+
+- New `AnnouncementsClient` for tenant and platform announcements (`_system`
+  publishers only).
+- `rest_publish` gains an optional `scope=` argument (parity with dotnet);
+  omitting it keeps the previous behavior.
+- Contract re-vendored (trace keys, `announcements.json`).
+- `brutalsystems-realtime-core` bumped to 0.6.0 in lockstep (the `==` pin stays
+  matched).
+
+### dotnet 0.3.0
+
+Additive — `AnnouncementsClient` for tenant and platform announcements; contract
+re-vendored. Requires a realtime service with the `/announcements` API. .NET
+versions come from the `dotnet-v*` tag, so there is no version file to edit.
+
 ### 0.5.0
 
 Additive — the WS publisher injects W3C trace context so publisher → realtime →
