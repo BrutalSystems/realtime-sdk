@@ -24,3 +24,4 @@ REALTIME_SERVICE_REPO ?= ../../realtime
 pull-contract:
 	cp $(REALTIME_SERVICE_REPO)/contract/frames.json ../contract/frames.json
 	cp $(REALTIME_SERVICE_REPO)/contract/channels.json ../contract/channels.json
+	cp $(REALTIME_SERVICE_REPO)/contract/announcements.json ../contract/announcements.json

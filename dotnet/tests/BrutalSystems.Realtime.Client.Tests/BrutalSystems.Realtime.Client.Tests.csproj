@@ -8,6 +8,10 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Conformance fixture: the canonical announcements contract, loaded verbatim at test time. -->
+    <None Include="..\..\..\contract\announcements.json" Link="contract\announcements.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\..\src\BrutalSystems.Realtime.Client\BrutalSystems.Realtime.Client.csproj" />
   </ItemGroup>
 </Project>

@@ -13,6 +13,14 @@ public class FramesTests
         return JsonNode.Parse(json)![section]![key]!.AsObject();
     }
 
+    private static JsonObject WithoutTrace(JsonObject frame)
+    {
+        var copy = frame.DeepClone().AsObject();
+        copy.Remove("traceparent");
+        copy.Remove("tracestate");
+        return copy;
+    }
+
     [Fact]
     public void Client_builders_match_fixture()
     {
@@ -20,7 +28,7 @@ public class FramesTests
         Assert.True(JsonNode.DeepEquals(Frames.Unsubscribe("room1"), Fixture("client", "unsubscribe")));
         Assert.True(JsonNode.DeepEquals(
             Frames.Publish("room1", new { @event = "msg", payload = new { text = "hi" } }),
-            Fixture("client", "publish")));
+            WithoutTrace(Fixture("client", "publish"))));
         Assert.True(JsonNode.DeepEquals(Frames.Ping(), Fixture("client", "ping")));
     }
 

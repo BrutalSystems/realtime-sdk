@@ -1,0 +1,79 @@
+{
+  "create_request": {
+    "body": "The database goes down at 3:05 PM for about 15 minutes. Save your work.",
+    "dismissible": true,
+    "ends_at": "2026-10-09T19:30:00Z",
+    "event_at": "2026-10-09T19:05:00Z",
+    "requested_by": "ops@example.com",
+    "scope": "_platform",
+    "severity": "warning",
+    "starts_at": "2026-10-09T19:00:00Z",
+    "title": "Scheduled maintenance"
+  },
+  "events": {
+    "clear": {
+      "channel": "announcements",
+      "data": {
+        "event": "announcement.clear",
+        "payload": {
+          "id": "01J9ZK3Q7M8N2P4R6S8T0V2W4X",
+          "scope": "platform"
+        }
+      },
+      "sender_id": "brokenhip-be",
+      "type": "message"
+    },
+    "state": {
+      "channel": "announcements",
+      "data": {
+        "event": "announcement.state",
+        "payload": {
+          "announcements": [
+            {
+              "body": "The database goes down at 3:05 PM for about 15 minutes. Save your work.",
+              "created_at": "2026-10-09T19:00:00Z",
+              "created_by": "brokenhip-be",
+              "dismissible": true,
+              "ends_at": "2026-10-09T19:30:00Z",
+              "event_at": "2026-10-09T19:05:00Z",
+              "id": "01J9ZK3Q7M8N2P4R6S8T0V2W4X",
+              "requested_by": "ops@example.com",
+              "revision": 1,
+              "scope": "platform",
+              "severity": "warning",
+              "starts_at": "2026-10-09T19:00:00Z",
+              "title": "Scheduled maintenance",
+              "updated_at": "2026-10-09T19:00:00Z"
+            }
+          ]
+        }
+      },
+      "sender_id": "brokenhip-be",
+      "type": "message"
+    },
+    "upsert": {
+      "channel": "announcements",
+      "data": {
+        "event": "announcement.upsert",
+        "payload": {
+          "body": "The database goes down at 3:05 PM for about 15 minutes. Save your work.",
+          "created_at": "2026-10-09T19:00:00Z",
+          "created_by": "brokenhip-be",
+          "dismissible": true,
+          "ends_at": "2026-10-09T19:30:00Z",
+          "event_at": "2026-10-09T19:05:00Z",
+          "id": "01J9ZK3Q7M8N2P4R6S8T0V2W4X",
+          "requested_by": "ops@example.com",
+          "revision": 1,
+          "scope": "platform",
+          "severity": "warning",
+          "starts_at": "2026-10-09T19:00:00Z",
+          "title": "Scheduled maintenance",
+          "updated_at": "2026-10-09T19:00:00Z"
+        }
+      },
+      "sender_id": "brokenhip-be",
+      "type": "message"
+    }
+  }
+}
