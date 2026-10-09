@@ -62,9 +62,15 @@ public sealed class AnnouncementsClient
     public static Announcement Deserialize(string json) =>
         JsonSerializer.Deserialize<Announcement>(json, Json) ?? throw new JsonException("empty announcement");
 
+    /// <summary>Creates an announcement.</summary>
+    /// <remarks>Create is not idempotent: if a create times out it may still have been stored; list before retrying.</remarks>
     public async Task<Announcement> CreateAsync(AnnouncementRequest req, CancellationToken ct = default) =>
         Deserialize(await SendAsync(HttpMethod.Post, _root, req, ct));
 
+    /// <summary>Replaces an announcement (PUT; this is not a patch).</summary>
+    /// <remarks>Update replaces the announcement - pass every field you want to keep; only starts_at is preserved
+    /// when omitted. Omitted EventAt and RequestedBy become null, and an omitted Dismissible returns to the
+    /// severity default.</remarks>
     public async Task<Announcement> UpdateAsync(string id, AnnouncementRequest req, CancellationToken ct = default) =>
         Deserialize(await SendAsync(HttpMethod.Put, $"{_root}/{Uri.EscapeDataString(id)}", req, ct));
 
@@ -92,7 +98,8 @@ public sealed class AnnouncementsClient
         try
         {
             using var doc = JsonDocument.Parse(text);
-            return doc.RootElement.TryGetProperty("detail", out var d) ? d.ToString() : text;
+            return doc.RootElement.ValueKind == JsonValueKind.Object
+                   && doc.RootElement.TryGetProperty("detail", out var d) ? d.ToString() : text;
         }
         catch (JsonException) { return text; }
     }

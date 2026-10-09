@@ -91,6 +91,16 @@ public class AnnouncementsClientTests
     }
 
     [Fact]
+    public async Task Non_object_error_body_does_not_mask_the_status()
+    {
+        var h = new Handler(HttpStatusCode.InternalServerError, "\"just a string\"");
+        var c = new AnnouncementsClient(new HttpClient(h), "http://rt", tokenProvider: () => "t", apiPrefix: "/api/v1");
+        var ex = await Assert.ThrowsAsync<AnnouncementsApiException>(() =>
+            c.CreateAsync(new AnnouncementRequest("t1", AnnouncementSeverity.Info, "T", "B", Ends)));
+        Assert.Equal(500, ex.Status);
+    }
+
+    [Fact]
     public async Task Error_carries_status_and_detail()
     {
         var h = new Handler(HttpStatusCode.Conflict, """{"detail":"Too many active announcements for this scope"}""");
