@@ -111,6 +111,25 @@ public class AnnouncementsClientTests
         Assert.Contains("Too many", ex.Detail);
     }
 
+    private const string Html = "<!doctype html>\n<html>\n  <head><title>Web   App</title></head>";
+
+    [Fact]
+    public async Task Non_json_success_body_throws_api_exception_on_create_and_list()
+    {
+        var c = new AnnouncementsClient(new HttpClient(new Handler(HttpStatusCode.OK, Html)), "http://rt",
+            tokenProvider: () => "t", apiPrefix: "/api/v1");
+
+        var ex = await Assert.ThrowsAsync<AnnouncementsApiException>(() =>
+            c.CreateAsync(new AnnouncementRequest("t1", AnnouncementSeverity.Info, "T", "B", Ends)));
+        Assert.Equal(200, ex.Status);
+        Assert.Contains("isn't JSON", ex.Detail);
+        Assert.Contains("check base_url: <!doctype html> <html> <head><title>Web App</title></head>", ex.Detail);
+
+        var ex2 = await Assert.ThrowsAsync<AnnouncementsApiException>(() => c.ListAsync("t1"));
+        Assert.Equal(200, ex2.Status);
+        Assert.Contains("isn't JSON", ex2.Detail);
+    }
+
     [Fact]
     public void Requires_exactly_one_auth()
     {

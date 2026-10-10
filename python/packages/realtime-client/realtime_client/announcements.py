@@ -73,7 +73,14 @@ class AnnouncementsClient:
             except (ValueError, AttributeError):
                 detail = resp.text
             raise AnnouncementsApiError(resp.status_code, detail)
-        return resp.json()
+        try:
+            return resp.json()
+        except ValueError:
+            snippet = " ".join(resp.text.split())[:120]
+            raise AnnouncementsApiError(
+                resp.status_code,
+                f"realtime returned {resp.status_code} but the body isn't JSON — check base_url: {snippet}",
+            ) from None
 
     @staticmethod
     def _body(scope: str, severity: Severity | str, title: str, body: str, ends_at: datetime,

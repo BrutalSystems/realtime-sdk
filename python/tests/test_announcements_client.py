@@ -170,3 +170,24 @@ async def test_injected_client_stays_open():
         await c.list(scope=PLATFORM)
     assert not injected.is_closed
     await injected.aclose()
+
+
+HTML = "<!doctype html>\n<html>\n  <head><title>Web   App</title></head>" + "x" * 200
+
+
+@pytest.mark.parametrize("call", ["create", "list"])
+async def test_non_json_success_body_raises_api_error(call):
+    def handler(r: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, text=HTML, headers={"content-type": "text/html"})
+
+    async with make(handler) as c:
+        with pytest.raises(AnnouncementsApiError) as ei:
+            if call == "create":
+                await c.create(scope=PLATFORM, severity=Severity.INFO, title="T", body="B", ends_at=ENDS)
+            else:
+                await c.list(scope=PLATFORM)
+    assert ei.value.status == 200
+    assert "isn't JSON" in ei.value.detail and "check base_url" in ei.value.detail
+    assert "<!doctype html> <html> <head><title>Web App</title></head>" in ei.value.detail
+    snippet = ei.value.detail.split("check base_url: ", 1)[1]
+    assert len(snippet) == 120

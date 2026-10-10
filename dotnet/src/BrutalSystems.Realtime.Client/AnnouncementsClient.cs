@@ -90,6 +90,14 @@ public sealed class AnnouncementsClient
         using var resp = await _http.SendAsync(req, ct);
         var text = await resp.Content.ReadAsStringAsync(ct);
         if (!resp.IsSuccessStatusCode) throw new AnnouncementsApiException((int)resp.StatusCode, Detail(text));
+        try { using var _ = JsonDocument.Parse(text); }
+        catch (JsonException)
+        {
+            var snippet = string.Join(' ', text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+            if (snippet.Length > 120) snippet = snippet[..120];
+            throw new AnnouncementsApiException((int)resp.StatusCode,
+                $"realtime returned {(int)resp.StatusCode} but the body isn't JSON — check base_url: {snippet}");
+        }
         return text;
     }
 

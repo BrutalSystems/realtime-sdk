@@ -40,7 +40,7 @@ wheels = [
 
 [[package]]
 name = "brutalsystems-realtime-client"
-version = "0.6.0"
+version = "0.6.1"
 source = { editable = "packages/realtime-client" }
 dependencies = [
     { name = "brutalsystems-realtime-core" },
@@ -57,7 +57,7 @@ requires-dist = [
 
 [[package]]
 name = "brutalsystems-realtime-core"
-version = "0.6.0"
+version = "0.6.1"
 source = { editable = "packages/realtime-core" }
 dependencies = [
     { name = "cryptography" },
