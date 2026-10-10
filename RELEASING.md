@@ -21,6 +21,14 @@ build and publish each package with your standard PyPI tooling.
 
 ## Changelog
 
+### 0.6.1 (Python)
+
+- AnnouncementsClient: a 2xx response whose body isn't JSON (usually a wrong base_url hitting a web front door) now raises AnnouncementsApiError/AnnouncementsApiException with the status and a body snippet instead of a raw parse error. No API change.
+
+### dotnet 0.3.1
+
+- AnnouncementsClient: a 2xx response whose body isn't JSON (usually a wrong base_url hitting a web front door) now raises AnnouncementsApiError/AnnouncementsApiException with the status and a body snippet instead of a raw parse error. No API change.
+
 ### 0.6.0 (Python)
 
 Additive — tenant and platform announcements. No breaking changes to existing
